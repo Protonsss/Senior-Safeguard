@@ -1,0 +1,117 @@
+{
+  "greeting": {
+    "welcome": "Hello! I am here to help you. What do you need today?",
+    "welcome_sir": "Hello! I am here to help you. What do you need today, sir?",
+    "welcome_madam": "Hello! I am here to help you. What do you need today, ma'am?",
+    "returning": "Welcome back! How can I help you today?",
+    "language_set": "From now on, I will speak to you in English."
+  },
+  "language_detection": {
+    "menu": "Press 1 for English, 2 for Mandarin, 3 for Hindi, 4 for Tamil.",
+    "confirm": "Did I understand correctly? You want English?",
+    "saved": "I have saved your language preference."
+  },
+  "common": {
+    "repeat": "Press 0 or say 'Repeat' anytime to hear me again.",
+    "slow_down": "Tell me slowly — I am listening.",
+    "confirmation": "Did I hear you right: {message}?",
+    "understood": "I understand. Let me help you with that.",
+    "one_moment": "One moment, please.",
+    "dont_worry": "Don't worry, I will do it step by step with you.",
+    "yes": "Yes",
+    "no": "No",
+    "help": "Say 'Help' anytime if you need assistance.",
+    "main_menu": "Returning to main menu. What else can I help you with?"
+  },
+  "tasks": {
+    "zoom_join": {
+      "name": "Join Zoom Meeting",
+      "start": "I will help you join a Zoom meeting. Do you have the meeting link or ID?",
+      "get_id": "Please tell me your Zoom meeting ID or link. You can say it one number at a time.",
+      "confirm_id": "I heard {meetingId}. Is that correct?",
+      "opening_app": "Now I will help you open the Zoom app.",
+      "entering_id": "I heard the ID. Now entering it for you.",
+      "joining": "Joining the meeting now. Please wait.",
+      "success": "You are now in the meeting! Do you see other people?",
+      "need_audio": "Do you want me to help you turn on your microphone?",
+      "need_video": "Do you want me to help you turn on your camera?",
+      "complete": "Great! You are all set. Enjoy your meeting!"
+    },
+    "phone_call": {
+      "name": "Make Phone Call",
+      "start": "I will help you make a phone call. Who would you like to call?",
+      "get_number": "Please tell me the phone number, or say the person's name from your contacts.",
+      "confirm_number": "I will call {number}. Is that correct?",
+      "calling": "Calling now. Please wait.",
+      "connected": "You are now connected. Speak when you are ready.",
+      "failed": "I could not connect the call. Would you like to try again?"
+    },
+    "volume_adjust": {
+      "name": "Adjust Volume",
+      "start": "I will help you adjust the volume. Say 'louder', 'quieter', or a number from 1 to 10.",
+      "current": "Your current volume is {level}.",
+      "adjusting": "Adjusting volume now.",
+      "confirm": "Is this better?",
+      "complete": "Volume is now set to {level}."
+    },
+    "wifi_connect": {
+      "name": "Connect to Wi-Fi",
+      "start": "I will help you connect to Wi-Fi. Can you see the network name on your screen?",
+      "get_network": "Please tell me the network name you want to connect to.",
+      "get_password": "Now, please tell me the Wi-Fi password slowly.",
+      "connecting": "Connecting to {network}. This may take a moment.",
+      "success": "You are now connected to {network}!",
+      "failed": "I could not connect. Let me try again, or you can try a different network."
+    },
+    "scam_check": {
+      "name": "Check for Scam",
+      "start": "I will check if this number is safe. Please tell me the phone number.",
+      "checking": "Checking the number now. One moment.",
+      "safe": "This number appears to be safe. It has {reports} positive reports.",
+      "warning": "Be careful! This number has {reports} scam reports. I recommend not answering.",
+      "blocked": "I have blocked this number for your safety.",
+      "no_data": "I don't have information about this number. Please be cautious."
+    },
+    "sync_me_install": {
+      "name": "Scam Shield Setup",
+      "intro": "For your safety, I will now turn on Scam Shield. This uses Sync.me — trusted by over 10 million seniors worldwide and listed in the Top 100 safety tools on the Google Play Store. It warns you if a caller is not trustworthy. I will set this up for you. Is that okay?",
+      "installing": "Setting up Scam Shield now. This will only take a moment.",
+      "success": "Scam Shield is now active. Fake callers will show 'Potential Scam' before you answer. You are safe.",
+      "already_active": "Good news! Scam Shield is already protecting you.",
+      "failed": "I had trouble setting this up. Would you like to try again?"
+    },
+    "contact_family": {
+      "name": "Contact Family",
+      "start": "I will connect you to your family. Who would you like to reach?",
+      "list": "I can connect you to: {contacts}",
+      "confirm": "I will call {name} at {number}. Is that correct?",
+      "calling": "Calling {name} now.",
+      "no_contacts": "I don't have any family contacts saved. Would you like to add one?"
+    },
+    "general_qa": {
+      "listening": "I am listening. Please ask me anything.",
+      "thinking": "Let me think about that.",
+      "answer": "{answer}",
+      "follow_up": "Do you want to do something after this?",
+      "anything_else": "Is there anything else I can help you with?"
+    }
+  },
+  "scam_shield": {
+    "call_warning": "Warning! This caller has been reported as a potential scam. Do you want to block this number?",
+    "blocked": "I have blocked this number. You are safe.",
+    "status_active": "Your Scam Shield is active and protecting you.",
+    "status_inactive": "Your Scam Shield is not active. Would you like me to turn it on?"
+  },
+  "errors": {
+    "not_understand": "I'm sorry, I didn't understand that. Can you please repeat?",
+    "technical": "I'm having technical difficulties. Let me try again.",
+    "timeout": "I didn't hear anything. Are you still there?",
+    "try_again": "Let's try that again. {message}"
+  },
+  "goodbye": {
+    "end_call": "Thank you for calling. Take care!",
+    "end_session": "Goodbye! I am always here when you need me.",
+    "come_back": "Call me anytime you need help. Goodbye!"
+  }
+}
+

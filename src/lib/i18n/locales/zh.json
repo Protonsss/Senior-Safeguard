@@ -1,0 +1,117 @@
+{
+  "greeting": {
+    "welcome": "您好！我在这里帮助您。今天您需要什么？",
+    "welcome_sir": "您好！我在这里帮助您，先生。今天您需要什么？",
+    "welcome_madam": "您好！我在这里帮助您，女士。今天您需要什么？",
+    "returning": "欢迎回来！今天我能帮您什么？",
+    "language_set": "从现在开始，我会用中文跟您说话。"
+  },
+  "language_detection": {
+    "menu": "请按1选英文，2选中文，3选印地文，4选泰米尔文。",
+    "confirm": "我理解对吗？您要中文？",
+    "saved": "我已保存您的语言偏好。"
+  },
+  "common": {
+    "repeat": "随时按0或说\"重复\"来再听一遍。",
+    "slow_down": "慢慢告诉我 — 我在听。",
+    "confirmation": "我听到的对吗：{message}？",
+    "understood": "我明白了。让我帮您。",
+    "one_moment": "请稍等。",
+    "dont_worry": "别担心，我会一步一步陪您做。",
+    "yes": "是",
+    "no": "不是",
+    "help": "随时说\"帮助\"如果您需要协助。",
+    "main_menu": "回到主菜单。还有什么我能帮您的？"
+  },
+  "tasks": {
+    "zoom_join": {
+      "name": "加入Zoom会议",
+      "start": "我会帮您加入Zoom会议。您有会议链接或号码吗？",
+      "get_id": "请告诉我您的Zoom会议号码或链接。您可以一个数字一个数字地说。",
+      "confirm_id": "我听到的是{meetingId}。对吗？",
+      "opening_app": "现在我帮您打开Zoom应用。",
+      "entering_id": "我听到号码了。现在为您输入。",
+      "joining": "正在加入会议。请稍等。",
+      "success": "您现在在会议里了！您看到其他人了吗？",
+      "need_audio": "您需要我帮您打开麦克风吗？",
+      "need_video": "您需要我帮您打开摄像头吗？",
+      "complete": "太好了！一切就绪。祝您开会愉快！"
+    },
+    "phone_call": {
+      "name": "打电话",
+      "start": "我会帮您打电话。您想打给谁？",
+      "get_number": "请告诉我电话号码，或者说联系人的名字。",
+      "confirm_number": "我会打给{number}。对吗？",
+      "calling": "正在拨打。请稍等。",
+      "connected": "已接通。您可以说话了。",
+      "failed": "电话打不通。您想再试一次吗？"
+    },
+    "volume_adjust": {
+      "name": "调整音量",
+      "start": "我会帮您调整音量。说\"大声点\"、\"小声点\"，或者说1到10的数字。",
+      "current": "您现在的音量是{level}。",
+      "adjusting": "正在调整音量。",
+      "confirm": "这样好吗？",
+      "complete": "音量现在设为{level}。"
+    },
+    "wifi_connect": {
+      "name": "连接Wi-Fi",
+      "start": "我会帮您连接Wi-Fi。您能看到屏幕上的网络名称吗？",
+      "get_network": "请告诉我您想连接的网络名称。",
+      "get_password": "现在，请慢慢告诉我Wi-Fi密码。",
+      "connecting": "正在连接{network}。这需要一点时间。",
+      "success": "您现在已连接到{network}了！",
+      "failed": "连接不上。让我再试一次，或者您可以试试别的网络。"
+    },
+    "scam_check": {
+      "name": "检查诈骗",
+      "start": "我会检查这个号码是否安全。请告诉我电话号码。",
+      "checking": "正在检查这个号码。请稍等。",
+      "safe": "这个号码看起来是安全的。有{reports}个好评。",
+      "warning": "小心！这个号码有{reports}个诈骗举报。我建议不要接。",
+      "blocked": "为了您的安全，我已屏蔽这个号码。",
+      "no_data": "我没有这个号码的信息。请小心。"
+    },
+    "sync_me_install": {
+      "name": "诈骗防护设置",
+      "intro": "为了您的安全，我现在会开启诈骗防护。这使用Sync.me — 全球超过1000万老年人信赖，并被列入Google Play商店前100安全工具。它会警告您来电者是否可信。我会为您设置。可以吗？",
+      "installing": "正在设置诈骗防护。只需一会儿。",
+      "success": "诈骗防护现已启动。假冒来电者会显示\"潜在诈骗\"，然后您再接听。您很安全。",
+      "already_active": "好消息！诈骗防护已经在保护您了。",
+      "failed": "设置遇到问题。您想再试一次吗？"
+    },
+    "contact_family": {
+      "name": "联系家人",
+      "start": "我会帮您联系家人。您想找谁？",
+      "list": "我可以帮您联系：{contacts}",
+      "confirm": "我会打给{name}，号码是{number}。对吗？",
+      "calling": "正在呼叫{name}。",
+      "no_contacts": "我没有保存任何家人联系方式。您要添加一个吗？"
+    },
+    "general_qa": {
+      "listening": "我在听。请随便问我。",
+      "thinking": "让我想想。",
+      "answer": "{answer}",
+      "follow_up": "之后您还想做什么吗？",
+      "anything_else": "还有什么我能帮您的吗？"
+    }
+  },
+  "scam_shield": {
+    "call_warning": "警告！此来电者被举报为潜在诈骗。您要屏蔽这个号码吗？",
+    "blocked": "我已屏蔽这个号码。您很安全。",
+    "status_active": "您的诈骗防护正在保护您。",
+    "status_inactive": "您的诈骗防护未启动。您要我打开吗？"
+  },
+  "errors": {
+    "not_understand": "对不起，我没听懂。可以再说一遍吗？",
+    "technical": "我遇到技术问题。让我再试一次。",
+    "timeout": "我没听到任何声音。您还在吗？",
+    "try_again": "我们再试一次。{message}"
+  },
+  "goodbye": {
+    "end_call": "感谢您的来电。保重！",
+    "end_session": "再见！我随时在这里为您服务。",
+    "come_back": "随时打给我如果您需要帮助。再见！"
+  }
+}
+
