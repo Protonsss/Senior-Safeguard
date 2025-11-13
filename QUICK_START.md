@@ -1,162 +1,69 @@
-# 🚀 Quick Start Guide - Senior Safeguard
+# 🚀 Quick Start Guide - The Guardian System
 
-## Start Everything (One Command)
+## Get Started in 5 Minutes
 
+### 1. Install Dependencies (Already Done! ✅)
+
+The Three.js dependencies have been installed:
 ```bash
-cd "/Users/stephenchen/Senior Safeguard"
-./start-with-tts.sh
+✅ three@0.160.0
+✅ @react-three/fiber@8.15.0
+✅ @react-three/drei@9.92.0
 ```
 
-This starts:
-1. **TTS Server** (port 8765) - High-quality voice
-2. **Next.js Server** (port 3000) - Web application
-
----
-
-## Test Voice Quality
+### 2. Start the Development Server
 
 ```bash
-./test-voice-quality.sh
+npm run dev
 ```
 
-**What to listen for:**
-- ✅ Natural, human-like voice
-- ✅ Clear pronunciation
-- ✅ Comfortable pace (not too fast)
-- ❌ NOT robotic or mechanical
+### 3. View The Guardian System
 
----
+Open your browser and navigate to:
 
-## Open the Application
-
-**Senior Interface (for elderly users):**
-http://localhost:3000/senior
-
-**Caregiver Dashboard:**
-http://localhost:3000/caregiver
-
----
-
-## Quick Voice Test
-
-Try these with the microphone:
-1. Click the microphone button 🎤
-2. Say: **"What time is it?"**
-3. Listen to Samantha respond
-4. Say: **"Tell me about Sync.me"**
-5. Say: **"I need help with Zoom"**
-
----
-
-## Status Check
-
-```bash
-# Check if both servers are running
-ps aux | grep -E "(tts_server|next)" | grep -v grep
-
-# Check TTS server specifically
-lsof -i :8765
-
-# Check Next.js server specifically
-lsof -i :3000
+#### 🔮 **Main Guardian Dashboard** (The Orb!)
+```
+http://localhost:3000/guardian
 ```
 
----
+This is the **centerpiece** - the living, breathing Guardian Orb with:
+- 3D animated sphere with 300 orbiting particles
+- Six emotional states (Idle → Listening → Thinking → Responding → Alert → Critical)
+- Four corner status cards (Camera, Vitals, Voice, Safety)
+- Enterprise navigation bar
+- Emergency test buttons at the bottom
 
-## Restart if Needed
-
-```bash
-# Stop everything
-lsof -ti :8765 | xargs kill -9
-pkill -f "next dev"
-
-# Start again
-./start-with-tts.sh
+#### 👥 **Senior Management Interface**
+```
+http://localhost:3000/guardian/seniors
 ```
 
----
+This is the **practical system** for managing seniors:
+- Real-time senior list with Supabase integration
+- Search and filter functionality
+- Call, SMS, and Scam Shield controls
+- Status monitoring (Online/Offline/Alert)
+- Battery, location, and activity tracking
 
-## Files & Documentation
+### 4. Test The Guardian Orb States
 
-- **VOICE_SYSTEM_README.md** - Complete voice system guide
-- **TTS_FIX_APPLIED.md** - Details on voice quality fix
-- **SYSTEM_STATUS.md** - Full system status
-- **test-voice-quality.sh** - Voice quality test script
-- **ENVIRONMENT_VARIABLES.md** - Configuration guide
+The orb automatically cycles through states every 8 seconds for demo purposes.
 
----
+You can also manually trigger states using the buttons at the bottom:
+- **"Test Alert"** → Amber orb, urgent pulse, warning rings
+- **"Test Emergency"** → RED orb, fast strobe, full-screen takeover
+- **"Reset to Idle"** → Return to calm watchful state
 
-## Common Issues
+### 5. Manage Seniors
 
-### Voice sounds robotic?
-✅ **FIXED!** The system now uses native macOS voices.
+Navigate to `/guardian/seniors` and:
+- View all seniors in a grid layout
+- Search by name or phone number
+- Filter by status (Online/Offline/Alert)
+- Call, SMS, or toggle Scam Shield for each senior
 
-Run the test: `./test-voice-quality.sh`
+## 🎉 You're Ready!
 
-If still robotic, see `TTS_FIX_APPLIED.md` troubleshooting section.
+The Guardian system is now running. Read GUARDIAN_SYSTEM.md for complete documentation.
 
-### Server not starting?
-```bash
-# Check what's using the port
-lsof -i :8765
-
-# Kill it
-lsof -ti :8765 | xargs kill -9
-
-# Restart
-./start-with-tts.sh
-```
-
-### Web page won't load?
-```bash
-# Check Next.js is running
-lsof -i :3000
-
-# Check browser console for errors
-# Open DevTools: Cmd+Option+I
-```
-
----
-
-## System Requirements
-
-- ✅ macOS (for native voice system)
-- ✅ Python 3.13+
-- ✅ Node.js 18+
-- ✅ Internet connection (for OpenAI API)
-
----
-
-## Environment Variables
-
-Make sure `.env.local` has:
-- `OPENAI_API_KEY` - For AI conversations
-- `NEXT_PUBLIC_SUPABASE_URL` - For database
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - For database
-- `SUPABASE_SERVICE_ROLE_KEY` - For database
-
-See `ENVIRONMENT_VARIABLES.md` for full list.
-
----
-
-## What's Working
-
-✅ High-quality voice output (Samantha)  
-✅ Voice input (Web Speech API)  
-✅ AI conversations (GPT-4)  
-✅ Task guidance (Zoom, Phone, Volume, WiFi)  
-✅ Scam protection (Sync.me)  
-✅ Multilingual support (English, Hindi)  
-
----
-
-## Next Steps
-
-1. ✅ Run `./start-with-tts.sh`
-2. ✅ Run `./test-voice-quality.sh`
-3. ✅ Open http://localhost:3000/senior
-4. ✅ Test the voice interface
-5. ✅ Try different tasks
-
-**Enjoy your human-like AI voice assistant!** 🎉
-
+**"Build it like your grandmother's life depends on it. Because someone's does."**
