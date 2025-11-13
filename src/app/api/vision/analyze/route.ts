@@ -1,11 +1,13 @@
 // AI Vision Analysis API - Analyze screen captures to provide context-aware help
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize OpenAI with GPT-4 Vision
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize Gemini with Vision capabilities
+const getGeminiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!apiKey) return null;
+  return new GoogleGenerativeAI(apiKey);
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,20 +20,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if OpenAI API key is configured
-    if (!process.env.OPENAI_API_KEY) {
-      console.warn('[Vision] OpenAI API key not configured - returning mock response');
+    // Check if Gemini API key is configured
+    const genAI = getGeminiClient();
+    if (!genAI) {
+      console.warn('[Vision] Gemini API key not configured - returning mock response');
       return NextResponse.json({
-        analysis: "I can see your screen now! (Note: OpenAI API key not configured for full AI analysis. Add OPENAI_API_KEY to enable GPT-4 Vision.)",
+        analysis: "I can see your screen now! (Note: Gemini API key not configured for full AI analysis. Add GEMINI_API_KEY to enable Gemini Vision.)",
         suggestions: [
-          "Set up OPENAI_API_KEY environment variable",
+          "Set up GEMINI_API_KEY environment variable",
           "The screen capture feature is working correctly",
           "AI vision will provide detailed analysis once API key is added"
         ]
       });
     }
 
-    console.log('[Vision] Analyzing screen with GPT-4 Vision...');
+    console.log('[Vision] Analyzing screen with Gemini Vision...');
     
     // Prepare system prompt based on language - BE PROACTIVE AND SPECIFIC
     const systemPrompts: Record<string, string> = {
@@ -41,36 +44,26 @@ export async function POST(request: NextRequest) {
       ta: 'நீங்கள் ஒரு நம்பிக்கையான, நிபுணர் AI உதவியாளர் சரியான பார்வை கொண்டவர். மூத்தவர் எந்த பயன்பாட்டை, இணையதளத்தை அல்லது திரையைப் பார்க்கிறார் என்பதை உடனடியாக அடையாளம் காண வேண்டும்.',
     };
 
-    // Call GPT-4 Vision API
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-vision-preview',
-      max_tokens: 500,
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompts[language] || systemPrompts.en,
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: prompt || 'Identify the EXACT application or website on this screen. Be specific with names (Google Meet, Zoom, Gmail, etc). State what they are currently doing. Then ask what specific thing they need help with on THIS screen.'
-            },
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:image/jpeg;base64,${image}`,
-                detail: 'high'
-              }
-            }
-          ]
-        }
-      ],
+    // Call Gemini Vision API
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
     });
 
-    const analysis = response.choices[0]?.message?.content || 'Could not analyze screen';
-    
+    const systemPrompt = systemPrompts[language] || systemPrompts.en;
+    const userPrompt = prompt || 'Identify the EXACT application or website on this screen. Be specific with names (Google Meet, Zoom, Gmail, etc). State what they are currently doing. Then ask what specific thing they need help with on THIS screen.';
+
+    const result = await model.generateContent([
+      `${systemPrompt}\n\n${userPrompt}`,
+      {
+        inlineData: {
+          data: image,
+          mimeType: 'image/jpeg'
+        }
+      }
+    ]);
+
+    const analysis = result.response.text() || 'Could not analyze screen';
+
     console.log('[Vision] ✅ Analysis complete:', analysis.substring(0, 100) + '...');
 
     // Extract key insights and suggestions
@@ -79,7 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       analysis,
       suggestions,
-      confidence: response.choices[0]?.finish_reason === 'stop' ? 'high' : 'medium',
+      confidence: 'high',
     });
 
   } catch (error: any) {
