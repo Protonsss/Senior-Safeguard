@@ -1,9 +1,9 @@
-// Groq integration for Q&A and task detection (FREE - no credits needed!)
-import Groq from 'groq-sdk';
+// Google Gemini integration for Q&A and task detection (FREE - generous limits!)
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Language, t } from '../i18n';
 
-let groqClient: Groq | null = null;
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+let genAI: GoogleGenerativeAI | null = null;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 function safeJsonParse<T = any>(text: string, fallback: T): T {
   if (!text) return fallback;
@@ -23,21 +23,19 @@ function safeJsonParse<T = any>(text: string, fallback: T): T {
   }
 }
 
-function getGroqClient(): Groq {
-  if (!groqClient) {
-    const apiKey = process.env.GROQ_API_KEY;
-    
+function getGeminiClient(): GoogleGenerativeAI {
+  if (!genAI) {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+
     if (!apiKey) {
       if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build') {
-        throw new Error('GROQ_API_KEY is required for production builds');
+        throw new Error('GEMINI_API_KEY is required for production builds');
       }
     }
-    
-    groqClient = new Groq({
-      apiKey: apiKey || 'sk-groq-placeholder',
-    });
+
+    genAI = new GoogleGenerativeAI(apiKey || 'placeholder');
   }
-  return groqClient;
+  return genAI;
 }
 
 export interface TaskDetectionResult {
@@ -115,30 +113,31 @@ EXAMPLES:
 - User: "i keep getting annoying robocalls" → {"taskType": "sync_me_install", "confidence": 0.9}
 - User: "what's for dinner?" → {"taskType": "general_qa", "confidence": 1.0}`;
 
-    const response = await getGroqClient().chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...conversationHistory.slice(-3).map((msg) => ({
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content,
-        })),
-        { role: 'user', content: userInput },
-      ],
-      temperature: 0.3,
-      max_tokens: 500,
+    const model = getGeminiClient().getGenerativeModel({
+      model: GEMINI_MODEL,
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 500,
+      },
     });
 
-    const content = response.choices?.[0]?.message?.content;
-    const text = typeof content === 'string' ? content : '';
-    const result = safeJsonParse<{ taskType?: TaskDetectionResult['taskType']; confidence?: number; extractedData?: Record<string, any> }>(text, {
+    // Build conversation history for Gemini
+    const history = conversationHistory.slice(-3).map((msg) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }],
+    }));
+
+    const chat = model.startChat({ history });
+    const response = await chat.sendMessage(`${systemPrompt}\n\nUser: ${userInput}`);
+    const text = response.response.text();
+    const parsed = safeJsonParse<{ taskType?: TaskDetectionResult['taskType']; confidence?: number; extractedData?: Record<string, any> }>(text, {
       taskType: 'general_qa',
       confidence: 1.0,
     });
     return {
-      taskType: result.taskType ?? 'general_qa',
-      confidence: typeof result.confidence === 'number' ? result.confidence : 1.0,
-      extractedData: result.extractedData || {},
+      taskType: parsed.taskType ?? 'general_qa',
+      confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 1.0,
+      extractedData: parsed.extractedData || {},
     };
   } catch (error) {
     console.error('Error detecting task:', error);
@@ -214,32 +213,29 @@ A: {"answer": "I'd be happy to help you call your granddaughter! Do you want me 
 Q: "I can't hear the TV"
 A: {"answer": "No problem at all! Let me help you turn up the volume so you can hear better.", "needsFollowUp": true, "suggestedAction": "volume_adjust"}`;
 
-    const messages = [
-      ...conversationHistory.map((msg) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      })),
-      { role: 'user' as const, content: question },
-    ];
-
-    const response = await getGroqClient().chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages,
-      ],
-      temperature: 0.7,
-      max_tokens: 1024,
+    const model = getGeminiClient().getGenerativeModel({
+      model: GEMINI_MODEL,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      },
     });
 
-    const content = response.choices[0].message.content;
-    const text = typeof content === 'string' ? content : '';
-    const result = safeJsonParse<{ answer?: string; needsFollowUp?: boolean; suggestedAction?: string }>(text, {} as any);
+    // Build conversation history for Gemini
+    const history = conversationHistory.map((msg) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }],
+    }));
+
+    const chat = model.startChat({ history });
+    const response = await chat.sendMessage(`${systemPrompt}\n\nUser: ${question}`);
+    const text = response.response.text();
+    const parsed = safeJsonParse<{ answer?: string; needsFollowUp?: boolean; suggestedAction?: string }>(text, {} as any);
     const fallbackAnswer = text?.trim() || t(language, 'errors.not_understand');
     return {
-      answer: result.answer ?? fallbackAnswer,
-      needsFollowUp: typeof result.needsFollowUp === 'boolean' ? result.needsFollowUp : false,
-      suggestedAction: result.suggestedAction,
+      answer: parsed.answer ?? fallbackAnswer,
+      needsFollowUp: typeof parsed.needsFollowUp === 'boolean' ? parsed.needsFollowUp : false,
+      suggestedAction: parsed.suggestedAction,
     };
   } catch (error) {
     console.error('Error answering question:', error);
@@ -265,20 +261,18 @@ Input: "hello" -> Output: null
 
 Respond with JSON: {"phoneNumber": "string or null"}`;
 
-    const response = await getGroqClient().chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: input },
-      ],
-      temperature: 0.1,
-      max_tokens: 100,
+    const model = getGeminiClient().getGenerativeModel({
+      model: GEMINI_MODEL,
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 100,
+      },
     });
 
-    const content = response.choices[0].message.content;
-    const text = typeof content === 'string' ? content : '';
-    const result = safeJsonParse<{ phoneNumber?: string | null }>(text, {} as any);
-    return (result.phoneNumber as string | null) ?? null;
+    const result = await model.generateContent(`${systemPrompt}\n\nInput: ${input}`);
+    const text = result.response.text();
+    const parsed = safeJsonParse<{ phoneNumber?: string | null }>(text, {} as any);
+    return (parsed.phoneNumber as string | null) ?? null;
   } catch (error) {
     console.error('Error extracting phone number:', error);
     return null;
@@ -302,20 +296,18 @@ Examples:
 
 Respond with JSON: {"meetingId": "string", "password": "string or undefined"}`;
 
-    const response = await getGroqClient().chat.completions.create({
-      model: GROQ_MODEL,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: input },
-      ],
-      temperature: 0.1,
-      max_tokens: 200,
+    const model = getGeminiClient().getGenerativeModel({
+      model: GEMINI_MODEL,
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 200,
+      },
     });
 
-    const content = response.choices[0].message.content;
-    const text = typeof content === 'string' ? content : '';
-    const result = safeJsonParse<{ meetingId?: string; password?: string }>(text, {} as any);
-    return result.meetingId ? result : null;
+    const result = await model.generateContent(`${systemPrompt}\n\nInput: ${input}`);
+    const text = result.response.text();
+    const parsed = safeJsonParse<{ meetingId?: string; password?: string }>(text, {} as any);
+    return parsed.meetingId ? parsed : null;
   } catch (error) {
     console.error('Error extracting Zoom info:', error);
     return null;
