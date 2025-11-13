@@ -244,11 +244,11 @@ export const animations = {
   },
 
   easings: {
-    standard: 'cubic-bezier(0.4, 0, 0.2, 1)',     // Material Design
-    decelerate: 'cubic-bezier(0, 0, 0.2, 1)',     // Fast start, slow end
-    accelerate: 'cubic-bezier(0.4, 0, 1, 1)',     // Slow start, fast end
-    sharp: 'cubic-bezier(0.4, 0, 0.6, 1)',        // Quick & sharp
-    spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',  // Overshoot & settle
+    standard: [0.4, 0, 0.2, 1] as const,     // Material Design
+    decelerate: [0, 0, 0.2, 1] as const,     // Fast start, slow end
+    accelerate: [0.4, 0, 1, 1] as const,     // Slow start, fast end
+    sharp: [0.4, 0, 0.6, 1] as const,        // Quick & sharp
+    spring: [0.34, 1.56, 0.64, 1] as const,  // Overshoot & settle
   },
 
   // Stagger delays (prime numbers for visual interest)
