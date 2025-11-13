@@ -187,14 +187,14 @@ lsof -ti :8765 | xargs kill -9
 ### Server Not Starting?
 
 **Check if port is in use:**
-```bash
+   ```bash
 lsof -i :8765
-```
+   ```
 
 **View server logs:**
-```bash
-cat tts_server.log
-```
+   ```bash
+   cat tts_server.log
+   ```
 
 **Restart:**
 ```bash

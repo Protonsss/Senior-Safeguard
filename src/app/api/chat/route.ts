@@ -22,7 +22,7 @@ function detectLanguageFromText(text: string, req: NextRequest): Language {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, language, sessionId: clientSessionId, history } = await request.json();
+    const { message, language, sessionId: clientSessionId, history, screenContext } = await request.json();
 
     if (!message) {
       return NextResponse.json(
@@ -61,12 +61,37 @@ export async function POST(request: NextRequest) {
       timestamp: new Date(),
     });
 
+    // If screen context is provided, enhance the message with visual context
+    let enhancedMessage = message;
+    if (screenContext) {
+      console.log('[Chat] Screen context provided - analyzing with GPT-4 Vision...');
+      try {
+        const visionResponse = await fetch(`${request.nextUrl.origin}/api/vision/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            image: screenContext,
+            prompt: `I can see the senior's screen. User question: "${message}". First, identify EXACTLY what application/website they're using (be specific: Google Meet, Zoom, Gmail, etc). Then answer their question based on what you see on their screen. Be direct and helpful.`,
+            language: resolvedLanguage
+          }),
+        });
+        
+        if (visionResponse.ok) {
+          const visionData = await visionResponse.json();
+          enhancedMessage = `[AI VISION - I can see their screen: ${visionData.analysis}]\n\nTheir question: "${message}"\n\nRespond directly to their question using what you see on screen. Be specific about the application and what they should do.`;
+          console.log('[Chat] ✅ Enhanced message with screen analysis');
+        }
+      } catch (error) {
+        console.error('[Chat] ❌ Failed to analyze screen context:', error);
+      }
+    }
+
     // Use orchestrator to generate response
     // For web, we create a temporary callSid-like identifier
     const tempCallSid = `WEB_${sessionId}`;
     
     // Use the freshly detected language, not stale session language
-    const response = await orchestrate(tempCallSid, message, resolvedLanguage, session.messages.slice(0, -1));
+    const response = await orchestrate(tempCallSid, enhancedMessage, resolvedLanguage, session.messages.slice(0, -1));
 
     // Add assistant message
     session.messages.push({

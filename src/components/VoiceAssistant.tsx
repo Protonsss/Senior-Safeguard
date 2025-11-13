@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Language, t } from '@/lib/i18n';
+import ScreenShareAssistant from './ScreenShareAssistant';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  hasScreenContext?: boolean;
 }
 
 interface VoiceAssistantProps {
@@ -18,6 +20,8 @@ export default function VoiceAssistant({ language }: VoiceAssistantProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentTranscript, setCurrentTranscript] = useState('');
+  const [screenContext, setScreenContext] = useState<string | null>(null);
+  const [showScreenShare, setShowScreenShare] = useState(false);
   const recognitionRef = useRef<any>(null);
   const synthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -358,11 +362,11 @@ export default function VoiceAssistant({ language }: VoiceAssistantProps) {
     return Math.round(words * 375);
   }
 
-  const addMessage = (role: 'user' | 'assistant', content: string) => {
-    setMessages(prev => [...prev, { role, content, timestamp: new Date() }]);
+  const addMessage = (role: 'user' | 'assistant', content: string, hasScreenContext = false) => {
+    setMessages(prev => [...prev, { role, content, timestamp: new Date(), hasScreenContext }]);
   };
 
-  const handleUserInput = async (transcript: string) => {
+  const handleUserInput = async (transcript: string, includeScreenContext = false) => {
     if (!transcript.trim()) return;
 
     addMessage('user', transcript);
@@ -379,6 +383,8 @@ export default function VoiceAssistant({ language }: VoiceAssistantProps) {
           // Don't send language - let API auto-detect!
           // language,  // REMOVED - enables auto-detection
           history: messages.slice(-5),
+          // Include screen context if available
+          screenContext: includeScreenContext ? screenContext : undefined,
         }),
       });
 
@@ -388,13 +394,13 @@ export default function VoiceAssistant({ language }: VoiceAssistantProps) {
         const serverMsg = data?.message ? String(data.message) : t(language, 'errors.technical');
         const debug = data?.debug ? `\nDetails: ${String(data.debug)}` : '';
         const out = `${serverMsg}${debug}`.trim();
-        addMessage('assistant', out);
+        addMessage('assistant', out, includeScreenContext);
         speak(serverMsg); // speak only the friendly part
         return;
       }
 
       if (data.message) {
-        addMessage('assistant', data.message);
+        addMessage('assistant', data.message, includeScreenContext);
         speak(data.message);
       }
     } catch (error) {
@@ -405,8 +411,46 @@ export default function VoiceAssistant({ language }: VoiceAssistantProps) {
     }
   };
 
+  const handleScreenCapture = (imageData: string) => {
+    console.log('[VoiceAssistant] Screen captured, storing for context');
+    setScreenContext(imageData);
+  };
+
+  const handleAnalysisReceived = (analysis: string) => {
+    console.log('[VoiceAssistant] AI analysis received:', analysis);
+    addMessage('assistant', `📊 Screen Analysis: ${analysis}`, true);
+    speak(analysis);
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8 pb-24 md:pb-0">
+      {/* Screen Share Toggle */}
+      <button
+        onClick={() => setShowScreenShare(!showScreenShare)}
+        className="glass-card w-full py-4 px-6 hover:bg-white/20 transition-all flex items-center justify-between group"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">👁️</span>
+          <div className="text-left">
+            <p className="text-white font-bold text-lg">AI Vision Assistant</p>
+            <p className="text-white/70 text-sm">Let me see your screen for better help</p>
+          </div>
+        </div>
+        <div className={`text-2xl transition-transform ${showScreenShare ? 'rotate-180' : ''}`}>
+          ⬇️
+        </div>
+      </button>
+
+      {/* Screen Share Component */}
+      {showScreenShare && (
+        <div className="animate-fadeIn">
+          <ScreenShareAssistant 
+            onScreenCapture={handleScreenCapture}
+            onAnalysisReceived={handleAnalysisReceived}
+          />
+        </div>
+      )}
+
       {/* Conversation Display with glassmorphism */}
       <div className="card-senior min-h-[350px] sm:min-h-[450px] max-h-[450px] sm:max-h-[650px] overflow-y-auto custom-scrollbar">
         <div className="space-y-4 sm:space-y-6">
@@ -423,12 +467,17 @@ export default function VoiceAssistant({ language }: VoiceAssistantProps) {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
             >
               <div
-                className={`max-w-[85%] sm:max-w-[80%] p-4 sm:p-6 rounded-2xl shadow-lg backdrop-blur-sm ${
+                className={`max-w-[85%] sm:max-w-[80%] p-4 sm:p-6 rounded-2xl shadow-lg backdrop-blur-sm relative ${
                   msg.role === 'user'
                     ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
                     : 'bg-white/90 text-gray-900 border border-white/20'
                 }`}
               >
+                {msg.hasScreenContext && (
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-xs shadow-lg" title="Response includes screen analysis">
+                    👁️
+                  </div>
+                )}
                 <p className="text-senior-message text-sm sm:text-base leading-relaxed">{msg.content}</p>
                 <span className="text-xs sm:text-sm opacity-70 mt-2 block">
                   {msg.timestamp.toLocaleTimeString([], { 
