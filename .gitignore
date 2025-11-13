@@ -54,3 +54,4 @@ env/
 # Temporary files
 /tmp/
 *.tmp
+typescript-errors.log
