@@ -7,9 +7,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 });
     }
 
+    // TTS is optional - return friendly message if not configured
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'OPENAI_API_KEY missing' }, { status: 400 });
+      return NextResponse.json({
+        error: 'TTS not configured',
+        message: 'Text-to-speech is optional. The Guardian works fine without it!',
+        text: text
+      }, { status: 200 });
     }
 
     const model = process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts';
