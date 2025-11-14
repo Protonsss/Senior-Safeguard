@@ -48,6 +48,47 @@ export default function DorothyPage() {
     }
   }, []);
 
+  // Speak in Dorothy's warm, patient voice
+  const speakDorothy = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+
+    // Try to find a warm, friendly voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v =>
+      v.name.includes('Samantha') ||
+      v.name.includes('Victoria') ||
+      v.name.includes('Karen') ||
+      (v.lang.startsWith('en') && v.name.includes('Female'))
+    );
+
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
+    utterance.rate = 0.85; // Slower - easier to understand
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    utterance.onstart = () => setOrbState('speaking');
+
+    // Simulate audio level during speech
+    const interval = setInterval(() => {
+      setAudioLevel(0.3 + Math.random() * 0.5);
+    }, 100);
+
+    utterance.onend = () => {
+      clearInterval(interval);
+      setOrbState('idle');
+      setAudioLevel(0.2);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
   // Initialize speech recognition
   useEffect(() => {
     if (initializedRef.current) return;
@@ -77,9 +118,8 @@ export default function DorothyPage() {
       };
 
       recognitionRef.current.onend = () => {
-        if (orbState === 'listening') {
-          setOrbState('idle');
-        }
+        // Just mark as idle - don't check orbState here to avoid dependency
+        setOrbState('idle');
       };
     }
 
@@ -98,49 +138,8 @@ export default function DorothyPage() {
         window.speechSynthesis.cancel();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Speak in Dorothy's warm, patient voice
-  const speakDorothy = (text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-
-    // Try to find a warm, friendly voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v =>
-      v.name.includes('Samantha') ||
-      v.name.includes('Victoria') ||
-      v.name.includes('Karen') ||
-      (v.lang.startsWith('en') && v.name.includes('Female'))
-    );
-
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-
-    utterance.rate = 0.85; // Slower - easier to understand
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-
-    utterance.onstart = () => setOrbState('speaking');
-    utterance.onend = () => setOrbState('idle');
-
-    // Simulate audio level during speech
-    const interval = setInterval(() => {
-      setAudioLevel(0.3 + Math.random() * 0.5);
-    }, 100);
-
-    utterance.onend = () => {
-      clearInterval(interval);
-      setOrbState('idle');
-      setAudioLevel(0.2);
-    };
-
-    window.speechSynthesis.speak(utterance);
-  };
 
   // Start listening
   const startListening = () => {
