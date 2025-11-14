@@ -6,26 +6,18 @@ import { EnterpriseVisionSystem } from '@/lib/vision';
 
 type AssistantState = 'ready' | 'listening' | 'processing' | 'speaking';
 
-/**
- * Senior Safeguard Voice Assistant
- * Plain, trustworthy healthcare interface - NO animations, NO effects
- * Designed to look like hospital patient portals (MyChart, medical devices)
- */
 export default function SeniorVoiceAssistant() {
   const router = useRouter();
 
-  // State
   const [state, setState] = useState<AssistantState>('ready');
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState('');
   const [visionEnabled, setVisionEnabled] = useState(false);
 
-  // Refs
   const recognitionRef = useRef<any>(null);
   const visionRef = useRef<EnterpriseVisionSystem | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Initialize speech recognition
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -43,9 +35,7 @@ export default function SeniorVoiceAssistant() {
         setTranscript(text);
       };
 
-      recognitionRef.current.onerror = () => {
-        setState('ready');
-      };
+      recognitionRef.current.onerror = () => setState('ready');
 
       recognitionRef.current.onend = () => {
         if (state === 'listening' && transcript) {
@@ -71,7 +61,6 @@ export default function SeniorVoiceAssistant() {
     };
   }, [state, transcript]);
 
-  // Start listening
   const handleListen = () => {
     if (!recognitionRef.current) {
       alert('Voice not supported. Please use Chrome or Edge.');
@@ -90,7 +79,6 @@ export default function SeniorVoiceAssistant() {
     }
   };
 
-  // Process input
   const handleProcess = async () => {
     if (!transcript.trim()) {
       setState('ready');
@@ -124,7 +112,6 @@ export default function SeniorVoiceAssistant() {
     }
   };
 
-  // Speak response
   const handleSpeak = (text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       setState('ready');
@@ -145,7 +132,6 @@ export default function SeniorVoiceAssistant() {
     window.speechSynthesis.speak(utterance);
   };
 
-  // Enable vision
   const handleEnableVision = async () => {
     if (!canvasRef.current) return;
 
@@ -161,7 +147,6 @@ export default function SeniorVoiceAssistant() {
     }
   };
 
-  // Disable vision
   const handleDisableVision = () => {
     if (visionRef.current) {
       visionRef.current.dispose();
@@ -170,7 +155,6 @@ export default function SeniorVoiceAssistant() {
     setVisionEnabled(false);
   };
 
-  // Emergency call
   const handleEmergencyCall = () => {
     if (confirm('Call your emergency contact?')) {
       alert('Calling emergency contact...');
@@ -178,294 +162,160 @@ export default function SeniorVoiceAssistant() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: '#ffffff',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
       {/* Header */}
-      <div style={{
-        borderBottom: '1px solid #d1d5db',
-        padding: '16px 24px',
-        backgroundColor: '#ffffff'
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+      <header className="border-b border-gray-100 bg-white/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
           <button
             onClick={() => router.push('/')}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '16px',
-              color: '#374151',
-              cursor: 'pointer',
-              padding: '8px 16px'
-            }}
+            className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
           >
             ← Back
           </button>
-          <h1 style={{
-            fontSize: '20px',
-            fontWeight: '600',
-            color: '#111827',
-            margin: 0
-          }}>
-            Voice Assistant
-          </h1>
-          <div style={{ width: '80px' }}></div>
+          <h1 className="text-xl font-semibold text-gray-900">Voice Assistant</h1>
+          <div className="w-16"></div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <div style={{
-        maxWidth: '900px',
-        margin: '0 auto',
-        padding: '40px 24px'
-      }}>
+      {/* Main */}
+      <main className="max-w-4xl mx-auto px-6 py-16">
 
         {/* Status */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '32px'
-        }}>
-          <div style={{
-            display: 'inline-block',
-            padding: '12px 24px',
-            border: '2px solid #d1d5db',
-            borderRadius: '4px',
-            backgroundColor: state === 'listening' ? '#eff6ff' : '#ffffff'
-          }}>
-            <p style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#111827',
-              margin: 0
-            }}>
+        <div className="flex items-center justify-center gap-4 mb-12">
+          <div className={`
+            px-6 py-3 rounded-full font-medium text-sm
+            shadow-sm transition-all duration-300
+            ${state === 'ready' ? 'bg-white text-gray-700 shadow-gray-100' : ''}
+            ${state === 'listening' ? 'bg-blue-50 text-blue-700 shadow-blue-100' : ''}
+            ${state === 'processing' ? 'bg-amber-50 text-amber-700 shadow-amber-100' : ''}
+            ${state === 'speaking' ? 'bg-green-50 text-green-700 shadow-green-100' : ''}
+          `}>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${
+                state === 'ready' ? 'bg-gray-400' :
+                state === 'listening' ? 'bg-blue-500 animate-pulse' :
+                state === 'processing' ? 'bg-amber-500 animate-pulse' :
+                'bg-green-500 animate-pulse'
+              }`}></div>
               {state === 'ready' && 'Ready'}
-              {state === 'listening' && 'Listening...'}
-              {state === 'processing' && 'Processing...'}
-              {state === 'speaking' && 'Speaking...'}
-            </p>
+              {state === 'listening' && 'Listening'}
+              {state === 'processing' && 'Processing'}
+              {state === 'speaking' && 'Speaking'}
+            </div>
           </div>
 
           {visionEnabled && (
-            <div style={{
-              display: 'inline-block',
-              marginLeft: '16px',
-              padding: '12px 24px',
-              border: '2px solid #10b981',
-              borderRadius: '4px',
-              backgroundColor: '#f0fdf4'
-            }}>
-              <p style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#047857',
-                margin: 0
-              }}>
+            <div className="px-6 py-3 rounded-full font-medium text-sm bg-green-50 text-green-700 shadow-sm shadow-green-100">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
                 Vision Active
-              </p>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Transcript */}
-        {transcript && (
-          <div style={{
-            marginBottom: '24px',
-            padding: '24px',
-            border: '2px solid #d1d5db',
-            borderRadius: '4px',
-            backgroundColor: '#f9fafb'
-          }}>
-            <p style={{
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#6b7280',
-              margin: '0 0 8px 0'
-            }}>
-              You said:
-            </p>
-            <p style={{
-              fontSize: '18px',
-              color: '#111827',
-              margin: 0,
-              lineHeight: '1.6'
-            }}>
-              {transcript}
-            </p>
-          </div>
-        )}
+        {/* Conversation */}
+        <div className="space-y-6 mb-12">
+          {transcript && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm shadow-gray-100">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">You</p>
+              <p className="text-lg text-gray-900 leading-relaxed">{transcript}</p>
+            </div>
+          )}
 
-        {/* Response */}
-        {response && (
-          <div style={{
-            marginBottom: '24px',
-            padding: '24px',
-            border: '2px solid #3b82f6',
-            borderRadius: '4px',
-            backgroundColor: '#eff6ff'
-          }}>
-            <p style={{
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#1e40af',
-              margin: '0 0 8px 0'
-            }}>
-              Assistant:
-            </p>
-            <p style={{
-              fontSize: '18px',
-              color: '#1e3a8a',
-              margin: 0,
-              lineHeight: '1.6'
-            }}>
-              {response}
-            </p>
-          </div>
-        )}
+          {response && (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-sm shadow-blue-100">
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">Assistant</p>
+              <p className="text-lg text-gray-900 leading-relaxed">{response}</p>
+            </div>
+          )}
+        </div>
 
-        {/* Main Button */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '48px'
-        }}>
+        {/* Primary Action */}
+        <div className="mb-16">
           <button
             onClick={state === 'ready' ? handleListen : undefined}
             disabled={state !== 'ready'}
-            style={{
-              width: '100%',
-              maxWidth: '400px',
-              padding: '24px',
-              fontSize: '20px',
-              fontWeight: '600',
-              color: '#ffffff',
-              backgroundColor: state === 'ready' ? '#3b82f6' : '#9ca3af',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: state === 'ready' ? 'pointer' : 'not-allowed'
-            }}
+            className={`
+              w-full py-6 rounded-2xl font-semibold text-lg
+              transition-all duration-200
+              ${state === 'ready'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 hover:scale-[1.02] active:scale-[0.98]'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }
+            `}
           >
             {state === 'ready' && 'Press to Speak'}
             {state === 'listening' && 'Listening...'}
             {state === 'processing' && 'Processing...'}
             {state === 'speaking' && 'Speaking...'}
           </button>
-
-          <p style={{
-            marginTop: '16px',
-            fontSize: '16px',
-            color: '#6b7280'
-          }}>
-            Press the button, then speak your question
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Press the button and speak your question
           </p>
         </div>
 
         {/* Secondary Actions */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '16px',
-          marginBottom: '32px'
-        }}>
-          {/* Vision */}
+        <div className="grid grid-cols-2 gap-4 mb-12">
           <button
             onClick={visionEnabled ? handleDisableVision : handleEnableVision}
-            style={{
-              padding: '20px',
-              fontSize: '18px',
-              fontWeight: '600',
-              color: visionEnabled ? '#374151' : '#ffffff',
-              backgroundColor: visionEnabled ? '#f3f4f6' : '#10b981',
-              border: '2px solid #d1d5db',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
+            className={`
+              py-5 rounded-xl font-semibold
+              transition-all duration-200
+              ${visionEnabled
+                ? 'bg-white text-gray-700 shadow-sm shadow-gray-100 hover:shadow-md'
+                : 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200 hover:shadow-xl hover:shadow-green-300 hover:scale-[1.02] active:scale-[0.98]'
+              }
+            `}
           >
             {visionEnabled ? 'Stop Vision' : 'Enable Vision'}
           </button>
 
-          {/* Emergency */}
           <button
             onClick={handleEmergencyCall}
-            style={{
-              padding: '20px',
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#ffffff',
-              backgroundColor: '#dc2626',
-              border: '2px solid #dc2626',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
+            className="py-5 rounded-xl font-semibold bg-gradient-to-br from-red-500 to-rose-600 text-white shadow-lg shadow-red-200 hover:shadow-xl hover:shadow-red-300 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
           >
             Call Family
           </button>
         </div>
 
         {/* Instructions */}
-        <div style={{
-          padding: '24px',
-          border: '2px solid #d1d5db',
-          borderRadius: '4px',
-          backgroundColor: '#f9fafb'
-        }}>
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#111827',
-            margin: '0 0 16px 0'
-          }}>
-            How to use:
-          </h2>
-          <ol style={{
-            margin: 0,
-            paddingLeft: '24px',
-            color: '#374151',
-            fontSize: '16px',
-            lineHeight: '1.8'
-          }}>
-            <li>Press &quot;Press to Speak&quot; button</li>
-            <li>Speak your question clearly</li>
-            <li>Wait for the assistant to respond</li>
-            <li>The assistant will speak the answer to you</li>
+        <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">How to use</h2>
+          <ol className="space-y-3 text-gray-600">
+            <li className="flex gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold flex items-center justify-center">1</span>
+              <span>Press the &quot;Press to Speak&quot; button above</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold flex items-center justify-center">2</span>
+              <span>Speak your question clearly and naturally</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold flex items-center justify-center">3</span>
+              <span>Wait for the assistant to process and respond</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold flex items-center justify-center">4</span>
+              <span>The assistant will speak the answer to you</span>
+            </li>
           </ol>
         </div>
-      </div>
+      </main>
 
-      {/* Canvas (hidden) */}
+      {/* Canvas */}
       <canvas
         ref={canvasRef}
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none',
-          display: visionEnabled ? 'block' : 'none',
-          zIndex: 9999
-        }}
+        className="fixed inset-0 pointer-events-none"
+        style={{ display: visionEnabled ? 'block' : 'none', zIndex: 9999 }}
       />
 
-      {/* Footer */}
-      <div style={{
-        position: 'fixed',
-        bottom: '16px',
-        right: '16px',
-        padding: '8px 16px',
-        border: '1px solid #d1d5db',
-        borderRadius: '4px',
-        backgroundColor: '#ffffff',
-        fontSize: '14px',
-        color: '#6b7280'
-      }}>
-        🔒 Secure
+      {/* Security Badge */}
+      <div className="fixed bottom-6 right-6 px-4 py-2 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm border border-gray-100">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+          <span>Secure</span>
+        </div>
       </div>
     </div>
   );
