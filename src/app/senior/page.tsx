@@ -12,6 +12,10 @@ import VoiceOrb from '@/components/VoiceOrb';
 import ScreenInsightCard from '@/components/ScreenInsightCard';
 import ScreenVisionBadge from '@/components/ScreenVisionBadge';
 import AppleMessageBubble from '@/components/AppleMessageBubble';
+import AIAvatar from '@/components/AIAvatar';
+import PremiumButton from '@/components/PremiumButton';
+import FloatingText3D from '@/components/FloatingText3D';
+import TrustBadge from '@/components/TrustBadge';
 
 type OrbState = 'idle' | 'listening' | 'thinking' | 'muted' | 'error';
 
@@ -26,6 +30,8 @@ export default function SeniorPage() {
   const [screenSummary, setScreenSummary] = useState<string>('');
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [isAnalyzingScreen, setIsAnalyzingScreen] = useState(false);
+  const [buttonLoading, setButtonLoading] = useState(false);
+  const [buttonSuccess, setButtonSuccess] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -282,18 +288,24 @@ export default function SeniorPage() {
   };
 
   const startScreenShare = async () => {
+    setButtonLoading(true);
+
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: { cursor: 'always' } as any,
         audio: false,
       });
-      
+
       mediaStreamRef.current = stream;
+
+      // Success states
+      setButtonLoading(false);
+      setButtonSuccess(true);
       setIsScreenSharing(true);
-      
+
       // Capture initial screenshot
       captureScreen(stream);
-      
+
       // Set up auto-capture every 5 seconds
       const captureInterval = setInterval(() => {
         if (mediaStreamRef.current) {
@@ -302,7 +314,7 @@ export default function SeniorPage() {
           clearInterval(captureInterval);
         }
       }, 5000);
-      
+
       // Clean up when screen share ends
       stream.getTracks()[0].addEventListener('ended', () => {
         stopScreenShare();
@@ -310,6 +322,9 @@ export default function SeniorPage() {
       });
     } catch (err) {
       console.error('Screen share error:', err);
+      setButtonLoading(false);
+      setOrbState('error');
+      setTimeout(() => setOrbState('idle'), 2000);
       alert('Could not start screen sharing. Please try again.');
     }
   };
@@ -320,6 +335,7 @@ export default function SeniorPage() {
       mediaStreamRef.current = null;
     }
     setIsScreenSharing(false);
+    setButtonSuccess(false);
     setScreenContext(null);
     setScreenSummary('');
   };
@@ -482,87 +498,94 @@ export default function SeniorPage() {
               transition={{ duration: 0.7, delay: 0.2 }}
             >
               {!isScreenSharing ? (
-                <GlassPanel className="p-8 text-center space-y-6 relative overflow-hidden">
-                  {/* Animated background effect */}
+                <div className="flex flex-col items-center text-center space-y-8">
+                  {/* Premium AI Avatar - 280px animated gradient orb */}
                   <motion.div
-                    className="absolute inset-0 opacity-20"
-                    style={{
-                      background: 'radial-gradient(circle at 50% 50%, rgba(52, 211, 153, 0.3), transparent 70%)',
-                    }}
-                    animate={{
-                      scale: [1, 1.2, 1],
-                      opacity: [0.1, 0.2, 0.1],
-                    }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    }}
-                  />
-                  
-                  {/* Icon with gradient glow */}
-                  <motion.div
-                    className="relative inline-block"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.6, delay: 0.1, type: 'spring', stiffness: 200 }}
                   >
-                    <motion.div
-                      className="absolute inset-0 blur-2xl rounded-full"
-                      style={{
-                        background: 'radial-gradient(circle, rgba(52, 211, 153, 0.4), transparent)',
+                    <button
+                      onClick={() => {
+                        // Toggle between idle and listening for demo
+                        setOrbState(orbState === 'idle' ? 'listening' : 'idle');
                       }}
-                      animate={{
-                        scale: [1, 1.3, 1],
-                        opacity: [0.4, 0.6, 0.4],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
-                    />
-                    <div className="relative p-4 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 rounded-full backdrop-blur-sm border border-emerald-300/30">
-                      <Eye className="w-12 h-12 text-emerald-600 drop-shadow-lg" />
+                      className="focus-visible:ring-4 focus-visible:ring-blue-400 focus-visible:ring-offset-4 rounded-full transition-transform hover:scale-105 active:scale-95"
+                      aria-label="AI assistant avatar"
+                      style={{ outline: 'none' }}
+                    >
+                      <AIAvatar
+                        state={orbState === 'muted' ? 'idle' : orbState === 'error' ? 'alert' : orbState}
+                        audioLevel={micLevel}
+                        size={280}
+                      />
+                    </button>
+                  </motion.div>
+
+                  {/* "Tap to talk" affordance */}
+                  <motion.div
+                    className="flex items-center gap-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+                  >
+                    <div className="relative">
+                      <motion.div
+                        className="absolute -left-8 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-2 border-blue-400"
+                        animate={{ scale: [1, 1.5, 1], opacity: [0.6, 0, 0.6] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
+                      />
+                      <span className="text-lg text-gray-600 font-normal">
+                        Tap avatar or say "Hey Helper"
+                      </span>
                     </div>
                   </motion.div>
-                  
-                  <div className="relative space-y-3">
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center justify-center gap-2">
-                      <Sparkles className="w-6 h-6 text-amber-500" />
-                      AI Vision Assistant
-                    </h2>
-                    <p className="text-lg text-slate-700 leading-relaxed max-w-md mx-auto">
-                      Let me see your screen so I can provide real-time guidance. I&apos;ll explain buttons, read text, and walk you through any task.
-                    </p>
-                  </div>
-                  
-                  <motion.button
-                    onClick={startScreenShare}
-                    className="relative w-full bg-gradient-to-r from-emerald-400 to-teal-500 text-white font-bold rounded-xl px-6 py-5 shadow-2xl hover:shadow-emerald-500/50 focus-visible:ring-2 focus-visible:ring-teal-400 focus-visible:ring-offset-2 overflow-hidden group text-lg"
-                    whileHover={{ y: -3, scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    {/* Shimmer effect */}
+
+                  {/* 3D Heading */}
+                  <div className="space-y-4 w-full">
+                    <FloatingText3D as="h2" size="h1" delay={0.4} className="flex items-center justify-center gap-3">
+                      <Sparkles className="w-8 h-8 text-amber-500" aria-hidden="true" />
+                      <span>AI Vision Assistant</span>
+                    </FloatingText3D>
+
+                    {/* Body text with high contrast */}
                     <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                      initial={{ x: '-100%' }}
-                      whileHover={{ x: '100%' }}
-                      transition={{ duration: 0.6, ease: 'easeInOut' }}
-                    />
-                    <span className="relative flex items-center justify-center gap-3">
-                      <Eye className="w-6 h-6" />
-                      Enable AI Vision
-                      <Sparkles className="w-5 h-5" />
-                    </span>
-                  </motion.button>
-                  
-                  <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="font-medium">Private & Secure</span>
-                    <span>•</span>
-                    <span>You have full control</span>
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.6 }}
+                    >
+                      <p className="text-xl md:text-2xl text-gray-900 leading-relaxed max-w-2xl mx-auto font-normal px-6">
+                        Let me see your screen so I can provide real-time guidance. I&apos;ll explain buttons, read text, and walk you through any task.
+                      </p>
+                    </motion.div>
                   </div>
-                </GlassPanel>
+
+                  {/* Premium Button */}
+                  <motion.div
+                    className="w-full max-w-2xl"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.8 }}
+                  >
+                    <PremiumButton
+                      onClick={startScreenShare}
+                      loading={buttonLoading}
+                      success={buttonSuccess}
+                      icon="eye"
+                    >
+                      Enable AI Vision
+                    </PremiumButton>
+                  </motion.div>
+
+                  {/* Trust Badge */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: 1.0 }}
+                  >
+                    <TrustBadge />
+                  </motion.div>
+                </div>
               ) : (
                 <div className="space-y-4">
                   <ScreenInsightCard
