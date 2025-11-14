@@ -2,42 +2,28 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, MicOff, Phone, Shield, Eye, EyeOff } from 'lucide-react';
 import { EnterpriseVisionSystem } from '@/lib/vision';
 
-type SystemState = 'ready' | 'listening' | 'processing' | 'speaking' | 'error';
+type AssistantState = 'ready' | 'listening' | 'processing' | 'speaking';
 
 /**
  * Senior Safeguard Voice Assistant
- * Enterprise-grade healthcare interface following Apple Health / Google Assistant patterns
- *
- * Design principles:
- * - Clean white background (medical standard)
- * - High contrast WCAG AAA
- * - Large touch targets (48px minimum)
- * - Simple visual hierarchy
- * - Emergency actions always visible
- * - Professional typography
+ * Plain, trustworthy healthcare interface - NO animations, NO effects
+ * Designed to look like hospital patient portals (MyChart, medical devices)
  */
 export default function SeniorVoiceAssistant() {
   const router = useRouter();
 
-  // System state
-  const [systemState, setSystemState] = useState<SystemState>('ready');
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [statusMessage, setStatusMessage] = useState('Ready to help');
-  const [transcriptText, setTranscriptText] = useState('');
-  const [responseText, setResponseText] = useState('');
-
-  // Vision system
-  const [visionActive, setVisionActive] = useState(false);
+  // State
+  const [state, setState] = useState<AssistantState>('ready');
+  const [transcript, setTranscript] = useState('');
+  const [response, setResponse] = useState('');
+  const [visionEnabled, setVisionEnabled] = useState(false);
 
   // Refs
   const recognitionRef = useRef<any>(null);
-  const visionSystemRef = useRef<EnterpriseVisionSystem | null>(null);
+  const visionRef = useRef<EnterpriseVisionSystem | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const statsIntervalRef = useRef<number | null>(null);
-  const audioLevelIntervalRef = useRef<number | null>(null);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -51,22 +37,21 @@ export default function SeniorVoiceAssistant() {
       recognitionRef.current.lang = 'en-US';
 
       recognitionRef.current.onresult = (event: any) => {
-        const transcript = Array.from(event.results)
+        const text = Array.from(event.results)
           .map((result: any) => result[0].transcript)
           .join('');
-        setTranscriptText(transcript);
+        setTranscript(text);
       };
 
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech error:', event.error);
-        setSystemState('error');
-        setStatusMessage('Microphone error');
-        setTimeout(() => setSystemState('ready'), 3000);
+      recognitionRef.current.onerror = () => {
+        setState('ready');
       };
 
       recognitionRef.current.onend = () => {
-        if (systemState === 'listening') {
-          handleStopListening();
+        if (state === 'listening' && transcript) {
+          handleProcess();
+        } else {
+          setState('ready');
         }
       };
     }
@@ -80,112 +65,73 @@ export default function SeniorVoiceAssistant() {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
-      if (statsIntervalRef.current) {
-        clearInterval(statsIntervalRef.current);
-      }
-      if (audioLevelIntervalRef.current) {
-        clearInterval(audioLevelIntervalRef.current);
-      }
-      if (visionSystemRef.current) {
-        visionSystemRef.current.dispose();
+      if (visionRef.current) {
+        visionRef.current.dispose();
       }
     };
-  }, [systemState]);
+  }, [state, transcript]);
 
   // Start listening
-  const handleStartListening = () => {
+  const handleListen = () => {
     if (!recognitionRef.current) {
-      alert('Voice recognition not available in this browser. Please use Chrome or Edge.');
+      alert('Voice not supported. Please use Chrome or Edge.');
       return;
     }
 
-    setSystemState('listening');
-    setStatusMessage('Listening...');
-    setTranscriptText('');
-    setResponseText('');
+    setState('listening');
+    setTranscript('');
+    setResponse('');
 
     try {
       recognitionRef.current.start();
-
-      // Simulate audio level
-      if (audioLevelIntervalRef.current) {
-        clearInterval(audioLevelIntervalRef.current);
-      }
-      audioLevelIntervalRef.current = window.setInterval(() => {
-        setAudioLevel(Math.random() * 0.8 + 0.2);
-      }, 50);
     } catch (err) {
-      console.error('Recognition start error:', err);
-      setSystemState('error');
-      setStatusMessage('Failed to start listening');
+      console.error(err);
+      setState('ready');
     }
   };
 
-  // Stop listening
-  const handleStopListening = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {}
+  // Process input
+  const handleProcess = async () => {
+    if (!transcript.trim()) {
+      setState('ready');
+      return;
     }
 
-    if (audioLevelIntervalRef.current) {
-      clearInterval(audioLevelIntervalRef.current);
-      audioLevelIntervalRef.current = null;
-    }
-    setAudioLevel(0);
-
-    if (transcriptText.trim()) {
-      processUserInput(transcriptText);
-    } else {
-      setSystemState('ready');
-      setStatusMessage('Ready to help');
-    }
-  };
-
-  // Process user input
-  const processUserInput = async (text: string) => {
-    setSystemState('processing');
-    setStatusMessage('Processing...');
+    setState('processing');
 
     try {
-      const response = await fetch('/api/chat', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text,
+          message: transcript,
           history: [],
-          screenContext: visionActive ? 'Vision system active' : null,
+          screenContext: visionEnabled ? 'Vision active' : null,
         }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
       if (data.message) {
-        setResponseText(data.message);
-        speakResponse(data.message);
+        setResponse(data.message);
+        handleSpeak(data.message);
       } else {
-        setSystemState('ready');
-        setStatusMessage('Ready to help');
+        setState('ready');
       }
     } catch (error) {
-      console.error('Processing error:', error);
-      setSystemState('error');
-      setStatusMessage('Connection error');
-      setTimeout(() => {
-        setSystemState('ready');
-        setStatusMessage('Ready to help');
-      }, 3000);
+      console.error(error);
+      setState('ready');
     }
   };
 
   // Speak response
-  const speakResponse = (text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  const handleSpeak = (text: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      setState('ready');
+      return;
+    }
 
-    setSystemState('speaking');
-    setStatusMessage('Speaking...');
-
+    setState('speaking');
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
@@ -193,15 +139,8 @@ export default function SeniorVoiceAssistant() {
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
 
-    utterance.onend = () => {
-      setSystemState('ready');
-      setStatusMessage('Ready to help');
-    };
-
-    utterance.onerror = () => {
-      setSystemState('ready');
-      setStatusMessage('Ready to help');
-    };
+    utterance.onend = () => setState('ready');
+    utterance.onerror = () => setState('ready');
 
     window.speechSynthesis.speak(utterance);
   };
@@ -211,205 +150,322 @@ export default function SeniorVoiceAssistant() {
     if (!canvasRef.current) return;
 
     try {
-      setStatusMessage('Starting vision system...');
-
-      const visionSystem = new EnterpriseVisionSystem();
-      await visionSystem.initialize(canvasRef.current);
-      await visionSystem.start();
-
-      visionSystemRef.current = visionSystem;
-      setVisionActive(true);
-      setStatusMessage('Vision system active');
+      const vision = new EnterpriseVisionSystem();
+      await vision.initialize(canvasRef.current);
+      await vision.start();
+      visionRef.current = vision;
+      setVisionEnabled(true);
     } catch (error) {
-      console.error('Vision error:', error);
-      alert('Failed to start vision system. Please allow screen sharing when prompted.');
+      console.error(error);
+      alert('Vision system failed to start.');
     }
   };
 
   // Disable vision
   const handleDisableVision = () => {
-    if (statsIntervalRef.current) {
-      clearInterval(statsIntervalRef.current);
-      statsIntervalRef.current = null;
+    if (visionRef.current) {
+      visionRef.current.dispose();
+      visionRef.current = null;
     }
-
-    if (visionSystemRef.current) {
-      visionSystemRef.current.dispose();
-      visionSystemRef.current = null;
-    }
-
-    setVisionActive(false);
-    setStatusMessage('Vision system stopped');
+    setVisionEnabled(false);
   };
 
   // Emergency call
   const handleEmergencyCall = () => {
-    alert('Emergency call feature - would dial emergency contact');
+    if (confirm('Call your emergency contact?')) {
+      alert('Calling emergency contact...');
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#ffffff',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div style={{
+        borderBottom: '1px solid #d1d5db',
+        padding: '16px 24px',
+        backgroundColor: '#ffffff'
+      }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
           <button
             onClick={() => router.push('/')}
-            className="text-gray-600 hover:text-gray-900 font-medium text-lg"
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '16px',
+              color: '#374151',
+              cursor: 'pointer',
+              padding: '8px 16px'
+            }}
           >
             ← Back
           </button>
-          <h1 className="text-2xl font-semibold text-gray-900">Voice Assistant</h1>
-          <div className="w-20"></div>
+          <h1 style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: 0
+          }}>
+            Voice Assistant
+          </h1>
+          <div style={{ width: '80px' }}></div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div className="w-full max-w-4xl space-y-8">
+      <div style={{
+        maxWidth: '900px',
+        margin: '0 auto',
+        padding: '40px 24px'
+      }}>
 
-          {/* Status Indicator */}
-          <div className="text-center space-y-4">
-            <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full ${
-              systemState === 'ready' ? 'bg-gray-100 text-gray-900' :
-              systemState === 'listening' ? 'bg-blue-50 text-blue-900' :
-              systemState === 'processing' ? 'bg-yellow-50 text-yellow-900' :
-              systemState === 'speaking' ? 'bg-green-50 text-green-900' :
-              'bg-red-50 text-red-900'
-            }`}>
-              <div className={`w-3 h-3 rounded-full ${
-                systemState === 'ready' ? 'bg-gray-400' :
-                systemState === 'listening' ? 'bg-blue-500 animate-pulse' :
-                systemState === 'processing' ? 'bg-yellow-500 animate-pulse' :
-                systemState === 'speaking' ? 'bg-green-500 animate-pulse' :
-                'bg-red-500'
-              }`}></div>
-              <span className="font-semibold text-lg">{statusMessage}</span>
-            </div>
-
-            {visionActive && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-900 rounded-lg text-sm font-medium">
-                <Eye className="w-4 h-4" />
-                Vision Active
-              </div>
-            )}
-          </div>
-
-          {/* Transcript Display */}
-          {transcriptText && (
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-              <p className="text-sm font-medium text-gray-500 mb-2">You said:</p>
-              <p className="text-xl text-gray-900 leading-relaxed">{transcriptText}</p>
-            </div>
-          )}
-
-          {/* Response Display */}
-          {responseText && (
-            <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
-              <p className="text-sm font-medium text-blue-700 mb-2">Assistant:</p>
-              <p className="text-xl text-blue-900 leading-relaxed">{responseText}</p>
-            </div>
-          )}
-
-          {/* Primary Controls */}
-          <div className="flex flex-col items-center gap-6">
-            {/* Microphone Button */}
-            <button
-              onClick={systemState === 'listening' ? handleStopListening : handleStartListening}
-              disabled={systemState === 'processing' || systemState === 'speaking'}
-              className={`w-32 h-32 rounded-full flex items-center justify-center transition-all shadow-lg ${
-                systemState === 'listening'
-                  ? 'bg-red-500 hover:bg-red-600 active:scale-95'
-                  : 'bg-blue-500 hover:bg-blue-600 active:scale-95'
-              } ${
-                (systemState === 'processing' || systemState === 'speaking')
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }`}
-              aria-label={systemState === 'listening' ? 'Stop listening' : 'Start listening'}
-            >
-              {systemState === 'listening' ? (
-                <MicOff className="w-12 h-12 text-white" />
-              ) : (
-                <Mic className="w-12 h-12 text-white" />
-              )}
-            </button>
-
-            <p className="text-gray-600 text-lg text-center max-w-md">
-              {systemState === 'ready' && 'Tap the microphone to speak'}
-              {systemState === 'listening' && 'Listening... Tap to stop'}
-              {systemState === 'processing' && 'Processing your request...'}
-              {systemState === 'speaking' && 'Speaking...'}
-              {systemState === 'error' && 'An error occurred'}
+        {/* Status */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '32px'
+        }}>
+          <div style={{
+            display: 'inline-block',
+            padding: '12px 24px',
+            border: '2px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: state === 'listening' ? '#eff6ff' : '#ffffff'
+          }}>
+            <p style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0
+            }}>
+              {state === 'ready' && 'Ready'}
+              {state === 'listening' && 'Listening...'}
+              {state === 'processing' && 'Processing...'}
+              {state === 'speaking' && 'Speaking...'}
             </p>
           </div>
 
-          {/* Secondary Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-12">
-            {/* Vision Control */}
-            <button
-              onClick={visionActive ? handleDisableVision : handleEnableVision}
-              className={`flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-semibold text-lg transition-all ${
-                visionActive
-                  ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                  : 'bg-green-500 text-white hover:bg-green-600'
-              }`}
-            >
-              {visionActive ? (
-                <>
-                  <EyeOff className="w-6 h-6" />
-                  Stop Vision
-                </>
-              ) : (
-                <>
-                  <Eye className="w-6 h-6" />
-                  Enable Vision
-                </>
-              )}
-            </button>
-
-            {/* Emergency Call */}
-            <button
-              onClick={handleEmergencyCall}
-              className="flex items-center justify-center gap-3 px-6 py-4 bg-red-500 text-white rounded-xl font-semibold text-lg hover:bg-red-600 transition-all"
-            >
-              <Phone className="w-6 h-6" />
-              Call Family
-            </button>
-          </div>
+          {visionEnabled && (
+            <div style={{
+              display: 'inline-block',
+              marginLeft: '16px',
+              padding: '12px 24px',
+              border: '2px solid #10b981',
+              borderRadius: '4px',
+              backgroundColor: '#f0fdf4'
+            }}>
+              <p style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#047857',
+                margin: 0
+              }}>
+                Vision Active
+              </p>
+            </div>
+          )}
         </div>
-      </main>
 
-      {/* Voice Waveform - Bottom (like Siri) */}
-      {systemState === 'listening' && (
-        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-blue-500/10 to-transparent py-8">
-          <div className="flex items-end justify-center gap-1 h-16">
-            {[...Array(40)].map((_, i) => {
-              const height = Math.sin(Date.now() / 200 + i / 2) * audioLevel * 50 + 10;
-              return (
-                <div
-                  key={i}
-                  className="w-1 bg-blue-500 rounded-full transition-all duration-75"
-                  style={{ height: `${height}%` }}
-                />
-              );
-            })}
+        {/* Transcript */}
+        {transcript && (
+          <div style={{
+            marginBottom: '24px',
+            padding: '24px',
+            border: '2px solid #d1d5db',
+            borderRadius: '4px',
+            backgroundColor: '#f9fafb'
+          }}>
+            <p style={{
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#6b7280',
+              margin: '0 0 8px 0'
+            }}>
+              You said:
+            </p>
+            <p style={{
+              fontSize: '18px',
+              color: '#111827',
+              margin: 0,
+              lineHeight: '1.6'
+            }}>
+              {transcript}
+            </p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Vision Canvas (hidden) */}
+        {/* Response */}
+        {response && (
+          <div style={{
+            marginBottom: '24px',
+            padding: '24px',
+            border: '2px solid #3b82f6',
+            borderRadius: '4px',
+            backgroundColor: '#eff6ff'
+          }}>
+            <p style={{
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#1e40af',
+              margin: '0 0 8px 0'
+            }}>
+              Assistant:
+            </p>
+            <p style={{
+              fontSize: '18px',
+              color: '#1e3a8a',
+              margin: 0,
+              lineHeight: '1.6'
+            }}>
+              {response}
+            </p>
+          </div>
+        )}
+
+        {/* Main Button */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '48px'
+        }}>
+          <button
+            onClick={state === 'ready' ? handleListen : undefined}
+            disabled={state !== 'ready'}
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              padding: '24px',
+              fontSize: '20px',
+              fontWeight: '600',
+              color: '#ffffff',
+              backgroundColor: state === 'ready' ? '#3b82f6' : '#9ca3af',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: state === 'ready' ? 'pointer' : 'not-allowed'
+            }}
+          >
+            {state === 'ready' && 'Press to Speak'}
+            {state === 'listening' && 'Listening...'}
+            {state === 'processing' && 'Processing...'}
+            {state === 'speaking' && 'Speaking...'}
+          </button>
+
+          <p style={{
+            marginTop: '16px',
+            fontSize: '16px',
+            color: '#6b7280'
+          }}>
+            Press the button, then speak your question
+          </p>
+        </div>
+
+        {/* Secondary Actions */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '16px',
+          marginBottom: '32px'
+        }}>
+          {/* Vision */}
+          <button
+            onClick={visionEnabled ? handleDisableVision : handleEnableVision}
+            style={{
+              padding: '20px',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: visionEnabled ? '#374151' : '#ffffff',
+              backgroundColor: visionEnabled ? '#f3f4f6' : '#10b981',
+              border: '2px solid #d1d5db',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            {visionEnabled ? 'Stop Vision' : 'Enable Vision'}
+          </button>
+
+          {/* Emergency */}
+          <button
+            onClick={handleEmergencyCall}
+            style={{
+              padding: '20px',
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#ffffff',
+              backgroundColor: '#dc2626',
+              border: '2px solid #dc2626',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Call Family
+          </button>
+        </div>
+
+        {/* Instructions */}
+        <div style={{
+          padding: '24px',
+          border: '2px solid #d1d5db',
+          borderRadius: '4px',
+          backgroundColor: '#f9fafb'
+        }}>
+          <h2 style={{
+            fontSize: '18px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: '0 0 16px 0'
+          }}>
+            How to use:
+          </h2>
+          <ol style={{
+            margin: 0,
+            paddingLeft: '24px',
+            color: '#374151',
+            fontSize: '16px',
+            lineHeight: '1.8'
+          }}>
+            <li>Press &quot;Press to Speak&quot; button</li>
+            <li>Speak your question clearly</li>
+            <li>Wait for the assistant to respond</li>
+            <li>The assistant will speak the answer to you</li>
+          </ol>
+        </div>
+      </div>
+
+      {/* Canvas (hidden) */}
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 pointer-events-none"
-        style={{ display: visionActive ? 'block' : 'none', zIndex: 9999 }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          display: visionEnabled ? 'block' : 'none',
+          zIndex: 9999
+        }}
       />
 
-      {/* Security Badge */}
-      <div className="fixed bottom-6 right-6 bg-white border border-gray-200 rounded-lg px-4 py-2 shadow-sm">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Shield className="w-4 h-4 text-green-500" />
-          <span>Secure Connection</span>
-        </div>
+      {/* Footer */}
+      <div style={{
+        position: 'fixed',
+        bottom: '16px',
+        right: '16px',
+        padding: '8px 16px',
+        border: '1px solid #d1d5db',
+        borderRadius: '4px',
+        backgroundColor: '#ffffff',
+        fontSize: '14px',
+        color: '#6b7280'
+      }}>
+        🔒 Secure
       </div>
     </div>
   );
