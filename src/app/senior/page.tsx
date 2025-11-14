@@ -9,8 +9,6 @@ import { motion } from 'framer-motion';
 import SunlightBackground from '@/components/SunlightBackground';
 import GlassPanel from '@/components/GlassPanel';
 import VoiceOrb from '@/components/VoiceOrb';
-import ScreenInsightCard from '@/components/ScreenInsightCard';
-import ScreenVisionBadge from '@/components/ScreenVisionBadge';
 import AppleMessageBubble from '@/components/AppleMessageBubble';
 import AIAvatar from '@/components/AIAvatar';
 import PremiumButton from '@/components/PremiumButton';
@@ -588,12 +586,10 @@ export default function SeniorPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <ScreenInsightCard
-                    title="What I see on your screen"
-                    summary={screenSummary || 'Analyzing your screen...'}
-                    actions={screenActions}
-                    thumbnailUrl={screenContext || undefined}
-                  />
+                  <div className="bg-white rounded-2xl p-6 shadow-lg">
+                    <h3 className="text-2xl font-bold mb-2">What I see on your screen</h3>
+                    <p className="text-gray-600">{screenSummary || 'Analyzing your screen...'}</p>
+                  </div>
                   <motion.button
                     onClick={stopScreenShare}
                     className="w-full bg-gradient-to-r from-rose-400 to-rose-500 text-white font-semibold rounded-xl px-6 py-3 shadow-lg hover:from-rose-500 hover:to-rose-600 focus-visible:ring-2 focus-visible:ring-teal-400 transition-all flex items-center justify-center gap-2"
@@ -610,8 +606,7 @@ export default function SeniorPage() {
         </div>
       </div>
 
-      {/* AI Vision Badge - floating indicator when screen sharing is active */}
-      <ScreenVisionBadge isActive={isScreenSharing} isAnalyzing={isAnalyzingScreen} />
+      {/* AI Vision Badge - disabled during vision system rebuild */}
 
       {/* Bottom Controls - Simplified */}
       <motion.div

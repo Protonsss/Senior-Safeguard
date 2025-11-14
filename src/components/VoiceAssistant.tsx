@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Language, t } from '@/lib/i18n';
-import ScreenShareAssistant from './ScreenShareAssistant';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -441,13 +440,12 @@ export default function VoiceAssistant({ language }: VoiceAssistantProps) {
         </div>
       </button>
 
-      {/* Screen Share Component */}
+      {/* Screen Share Component - Disabled during vision system rebuild */}
       {showScreenShare && (
         <div className="animate-fadeIn">
-          <ScreenShareAssistant 
-            onScreenCapture={handleScreenCapture}
-            onAnalysisReceived={handleAnalysisReceived}
-          />
+          <div className="bg-yellow-100 border border-yellow-400 rounded-lg p-4 text-yellow-800">
+            Enterprise Vision System integration coming soon...
+          </div>
         </div>
       )}
 
