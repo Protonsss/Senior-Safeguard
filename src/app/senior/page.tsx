@@ -536,7 +536,7 @@ export default function SeniorPage() {
                         transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
                       />
                       <span className="text-lg text-gray-600 font-normal">
-                        Tap avatar or say "Hey Helper"
+                        Tap avatar or say &quot;Hey Helper&quot;
                       </span>
                     </div>
                   </motion.div>
