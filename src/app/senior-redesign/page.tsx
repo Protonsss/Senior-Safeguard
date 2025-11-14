@@ -236,7 +236,7 @@ export default function SeniorRedesignPage() {
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
                   />
                   <span className="text-lg text-gray-600 font-normal">
-                    Tap avatar or say "Hey Helper"
+                    Tap avatar or say &quot;Hey Helper&quot;
                   </span>
                 </div>
               </motion.div>
@@ -255,7 +255,7 @@ export default function SeniorRedesignPage() {
                   transition={{ duration: 0.5, delay: 0.6 }}
                 >
                   <p className="text-xl md:text-2xl text-gray-800 leading-relaxed max-w-2xl mx-auto font-normal px-6 py-4">
-                    Let me see your screen so I can provide real-time guidance. I'll explain buttons, read text, and walk you through any task.
+                    Let me see your screen so I can provide real-time guidance. I&apos;ll explain buttons, read text, and walk you through any task.
                   </p>
                 </motion.div>
               </div>
@@ -296,7 +296,7 @@ export default function SeniorRedesignPage() {
               </FloatingText3D>
 
               <p className="text-xl text-gray-800 leading-relaxed max-w-md mx-auto">
-                I'm watching and ready to help. Just ask me anything about what you see on your screen.
+                I&apos;m watching and ready to help. Just ask me anything about what you see on your screen.
               </p>
 
               <motion.button
