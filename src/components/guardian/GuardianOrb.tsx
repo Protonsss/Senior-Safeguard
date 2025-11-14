@@ -129,7 +129,7 @@ const CoreSphere: React.FC<CoreSphereProps> = ({ state }) => {
       const time = clock.getElapsedTime();
 
       // Breathing animation
-      if (stateConfig.breathCycle > 0) {
+      if (stateConfig.breathCycle > 0 && 'min' in stateConfig.scale && 'max' in stateConfig.scale) {
         const breathPhase = (time % (stateConfig.breathCycle / 1000)) / (stateConfig.breathCycle / 1000);
         const scale = stateConfig.scale.min + (stateConfig.scale.max - stateConfig.scale.min) * Math.sin(breathPhase * Math.PI * 2) * 0.5 + 0.5;
         meshRef.current.scale.setScalar(scale);
@@ -217,6 +217,7 @@ interface GuardianOrbSceneProps {
  */
 const GuardianOrbScene: React.FC<GuardianOrbSceneProps> = ({ state, particleCount }) => {
   const stateConfig = orbStates[state];
+  const innerLightColor = 'lightColor' in stateConfig ? stateConfig.lightColor : getStateColor(state);
 
   return (
     <>
@@ -249,7 +250,7 @@ const GuardianOrbScene: React.FC<GuardianOrbSceneProps> = ({ state, particleCoun
       <pointLight
         position={[0, 0, 0]}
         intensity={stateConfig.lightIntensity}
-        color={stateConfig.lightColor || getStateColor(state)}
+        color={innerLightColor}
         distance={10}
         decay={2}
       />

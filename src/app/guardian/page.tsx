@@ -40,48 +40,78 @@ export default function GuardianDashboard() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Demo: Cycle through states every 8 seconds
+  // Real-time metrics from Supabase
+  const [activeSeniors, setActiveSeniors] = useState(0);
+  const [scamsBlocked, setScamsBlocked] = useState(0);
+  const [pendingAlerts, setPendingAlerts] = useState(0);
+  const [totalSaved, setTotalSaved] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Load real data from Supabase
   useEffect(() => {
-    const states: GuardianState[] = ['idle', 'listening', 'thinking', 'responding', 'idle'];
-    let currentIndex = 0;
-
-    const interval = setInterval(() => {
-      currentIndex = (currentIndex + 1) % states.length;
-      setOrbState(states[currentIndex]);
-    }, 8000);
-
+    loadDashboardMetrics();
+    const interval = setInterval(loadDashboardMetrics, 30000); // Refresh every 30s
     return () => clearInterval(interval);
   }, []);
 
-  // Mock data - will be replaced with real Supabase data
-  const cameraData = {
-    roomsMonitored: 3,
-    detectionConfidence: 98,
-    lastMotion: '2 min ago',
-    status: 'All cameras active',
-  };
+  async function loadDashboardMetrics() {
+    try {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
 
-  const vitalData = {
-    heartRate: 72,
-    activityLevel: 'Moderate',
-    sleepQuality: 85,
-    status: 'Within normal range',
-  };
+      // Get active seniors count
+      const { count: seniorsCount } = await supabase
+        .from('seniors')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
 
-  const voiceData = {
-    commandsToday: 24,
-    accuracy: 96,
-    language: 'English',
-    lastCommand: 'Call Sarah',
-    status: 'Ready to help',
-  };
+      // Get scams blocked today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count: scamsCount, data: scamsData } = await supabase
+        .from('scam_attempts')
+        .select('estimated_loss_prevented', { count: 'exact' })
+        .eq('was_blocked', true)
+        .gte('detected_at', today.toISOString());
 
-  const safetyData = {
-    scamsBlocked: 12,
-    fallDetection: 'Active',
-    emergencyContacts: 3,
-    lastEvent: '1 hour ago',
-    status: 'Protected',
+      // Get pending alerts
+      const { count: alertsCount } = await supabase
+        .from('alerts')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Calculate total saved
+      const saved = scamsData?.reduce((sum, attempt) => sum + (attempt.estimated_loss_prevented || 0), 0) || 0;
+
+      setActiveSeniors(seniorsCount || 0);
+      setScamsBlocked(scamsCount || 0);
+      setPendingAlerts(alertsCount || 0);
+      setTotalSaved(saved);
+
+      // Update orb state based on alerts
+      if (alertsCount && alertsCount > 5) {
+        setOrbState('alert');
+      } else if (alertsCount && alertsCount > 0) {
+        setOrbState('listening');
+      } else {
+        setOrbState('idle');
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to load metrics:', error);
+      setLoading(false);
+    }
+  }
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   return (
@@ -152,81 +182,81 @@ export default function GuardianDashboard() {
       {/* Status Cards - Four Corners */}
       <StatusCard
         position="top-left"
-        icon={<Video size={32} />}
-        title="Camera Monitoring"
-        timestamp="Updated 1m ago"
-        primaryMetric="Rooms Monitored"
-        primaryValue={cameraData.roomsMonitored}
-        unit="rooms"
+        icon={<TrendingUp size={32} />}
+        title="Active Seniors"
+        timestamp="Live"
+        primaryMetric="Currently Monitored"
+        primaryValue={loading ? '...' : activeSeniors}
+        unit="seniors"
         trend={{
           direction: 'neutral',
-          value: `${cameraData.detectionConfidence}% confidence`,
+          value: 'Real-time monitoring',
         }}
-        status={cameraData.status}
+        status={activeSeniors > 0 ? 'System Active' : 'Awaiting Data'}
         statusColor="cyan"
         actionButton={{
-          label: 'View Cameras',
-          onClick: () => console.log('View cameras'),
+          label: 'View All Seniors',
+          onClick: () => window.location.href = '/guardian/seniors',
         }}
       />
 
       <StatusCard
         position="top-right"
-        icon={<Heart size={32} />}
-        title="Vital Signs"
-        timestamp="Updated 30s ago"
-        primaryMetric="Heart Rate"
-        primaryValue={vitalData.heartRate}
-        unit="BPM"
+        icon={<AlertTriangle size={32} />}
+        title="Alert Status"
+        timestamp="Live"
+        primaryMetric="Pending Alerts"
+        primaryValue={loading ? '...' : pendingAlerts}
+        unit="alerts"
         trend={{
-          direction: 'up',
-          value: '2 BPM',
+          direction: pendingAlerts > 0 ? 'up' : 'down',
+          value: pendingAlerts > 0 ? 'Needs attention' : 'All clear',
         }}
-        status={vitalData.status}
-        statusColor="green"
+        status={pendingAlerts > 0 ? 'Action Required' : 'No Active Alerts'}
+        statusColor={pendingAlerts > 5 ? 'red' : pendingAlerts > 0 ? 'amber' : 'green'}
         actionButton={{
-          label: 'View Health Data',
-          onClick: () => console.log('View health'),
+          label: 'View Alerts',
+          onClick: () => window.location.href = '/guardian/seniors',
         }}
       />
 
       <StatusCard
         position="bottom-left"
-        icon={<Mic size={32} />}
-        title="Voice Assistant"
-        timestamp="Updated 5m ago"
-        primaryMetric="Commands Today"
-        primaryValue={voiceData.commandsToday}
-        unit="commands"
+        icon={<Shield size={32} />}
+        title="Scam Protection"
+        timestamp="Today"
+        primaryMetric="Scams Blocked"
+        primaryValue={loading ? '...' : scamsBlocked}
+        unit="attempts"
         trend={{
           direction: 'up',
-          value: `${voiceData.accuracy}% accuracy`,
+          value: formatCurrency(totalSaved) + ' saved',
         }}
-        status={voiceData.status}
-        statusColor="purple"
+        status={scamsBlocked > 0 ? 'Actively Protecting' : 'Monitoring'}
+        statusColor="green"
         actionButton={{
-          label: 'View History',
-          onClick: () => console.log('View voice history'),
+          label: 'View Details',
+          onClick: () => loadDashboardMetrics(), // Refresh data
         }}
       />
 
       <StatusCard
         position="bottom-right"
-        icon={<Shield size={32} />}
-        title="Safety Shield"
-        timestamp="Updated 1m ago"
-        primaryMetric="Scams Blocked Today"
-        primaryValue={safetyData.scamsBlocked}
-        unit="attempts"
+        icon={<Clock size={32} />}
+        title="Financial Impact"
+        timestamp="Today"
+        primaryMetric="Fraud Prevented"
+        primaryValue={loading ? '...' : formatCurrency(totalSaved)}
+        unit=""
         trend={{
-          direction: 'down',
-          value: '3 less than yesterday',
+          direction: totalSaved > 0 ? 'up' : 'neutral',
+          value: `${scamsBlocked} threats blocked`,
         }}
-        status={safetyData.status}
-        statusColor="green"
+        status={totalSaved > 0 ? 'ROI Positive' : 'Monitoring'}
+        statusColor="purple"
         actionButton={{
-          label: 'View Threats',
-          onClick: () => console.log('View threats'),
+          label: 'Refresh Data',
+          onClick: () => loadDashboardMetrics(),
         }}
       />
 
