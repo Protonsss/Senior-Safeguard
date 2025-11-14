@@ -52,6 +52,7 @@ export default function SeniorPage() {
   const initializedRef = useRef(false);
   const visionSystemRef = useRef<EnterpriseVisionSystem | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const statsIntervalRef = useRef<number | null>(null);
 
   // Get user's name from localStorage
   const [userName, setUserName] = useState('there');
@@ -153,6 +154,9 @@ export default function SeniorPage() {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
+      if (statsIntervalRef.current) {
+        clearInterval(statsIntervalRef.current);
+      }
       if (visionSystemRef.current) {
         visionSystemRef.current.dispose();
       }
@@ -250,8 +254,12 @@ export default function SeniorPage() {
       visionSystemRef.current = visionSystem;
       setVisionEnabled(true);
 
-      // Monitor stats
-      const statsInterval = setInterval(() => {
+      // Monitor stats - clear any existing interval first
+      if (statsIntervalRef.current) {
+        clearInterval(statsIntervalRef.current);
+      }
+
+      statsIntervalRef.current = window.setInterval(() => {
         if (visionSystemRef.current) {
           const metrics = visionSystemRef.current.getMetrics();
           setVisionStats({
@@ -267,8 +275,6 @@ export default function SeniorPage() {
       setOrbState('celebrating');
       setTimeout(() => setOrbState('idle'), 2000);
       speakDorothy('Perfect! I can now see your screen. I\'ll guide you through anything you need.');
-
-      return () => clearInterval(statsInterval);
     } catch (error) {
       console.error('Vision initialization error:', error);
       setOrbState('idle');
@@ -284,12 +290,21 @@ export default function SeniorPage() {
 
   // Disable vision
   const disableVision = () => {
+    // Clear stats monitoring interval
+    if (statsIntervalRef.current) {
+      clearInterval(statsIntervalRef.current);
+      statsIntervalRef.current = null;
+    }
+
+    // Dispose vision system
     if (visionSystemRef.current) {
       visionSystemRef.current.dispose();
       visionSystemRef.current = null;
     }
+
     setVisionEnabled(false);
     setDetectedElements([]);
+    setVisionStats({ fps: 0, latency: 0 });
     speakDorothy('Vision system stopped.');
   };
 
